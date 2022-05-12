@@ -314,6 +314,7 @@ namespace strumpack {
       } else {
         int active_procs = nprows_ * npcols_;
         if (active_procs < P_) {
+
           auto active_comm = comm_.sub(0, active_procs);
           if (comm_.rank() < active_procs) {
             ctxt_ = scalapack::Csys2blacs_handle(active_comm.comm());
@@ -326,6 +327,7 @@ namespace strumpack {
           scalapack::Cblacs_gridinit(&ctxt_, "C", nprows_, npcols_);
           ctxt_T_ = scalapack::Csys2blacs_handle(comm_.comm());
           scalapack::Cblacs_gridinit(&ctxt_T_, "R", npcols_, nprows_);
+          layout(P_, nprows_, npcols_);          
         }
         ctxt_all_ = scalapack::Csys2blacs_handle(comm_.comm());
         scalapack::Cblacs_gridinit(&ctxt_all_, "R", 1, P_);
