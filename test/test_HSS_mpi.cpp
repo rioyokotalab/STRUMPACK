@@ -65,6 +65,7 @@ int run(int argc, char* argv[]) {
   BLACSGrid grid(MPI_COMM_WORLD);
   DistributedMatrix<double> A;
 
+  auto start_init = std::chrono::system_clock::now();
   char test_problem = 'T';
   if (argc > 1) test_problem = argv[1][0];
   else usage();
@@ -132,9 +133,14 @@ int run(int argc, char* argv[]) {
     exit(1);
   }
   hss_opts.set_from_command_line(argc, argv);
+  auto stop_init = std::chrono::system_clock::now();
+  double init_time = std::chrono::duration_cast<
+    std::chrono::milliseconds>(stop_init - start_init).count();
 
   if (hss_opts.verbose()) A.print("A");
   if (!mpi_rank()) cout << "# tol = " << hss_opts.rel_tol() << endl;
+
+  std::cout << "finish dense matrix generation.\n";
 
   auto start_compress = std::chrono::system_clock::now();
   HSSMatrixMPI<double> H(A, hss_opts);
@@ -307,6 +313,7 @@ int run(int argc, char* argv[]) {
 
   if (!mpi_rank()) {
     std::cout << "RESULT: " << compress_time << ", "
+              << init_time << ", "
               << solve_error << "," <<  ulv_time << ","
               << Hrank << "," << m
               << std::endl;
