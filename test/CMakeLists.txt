@@ -20,6 +20,8 @@ if(STRUMPACK_USE_MPI)
   add_executable(test_structure_reuse_mpi test_structure_reuse_mpi.cpp)
   add_executable(test_BLR_mpi             test_BLR_mpi.cpp)
 
+
+
   target_link_libraries(test_HSS_mpi strumpack)
   target_link_libraries(test_sparse_mpi strumpack)
   target_link_libraries(test_structure_reuse_mpi strumpack)

@@ -33,6 +33,17 @@ using namespace std;
 
 #include "dense/DistributedMatrix.hpp"
 #include "HSS/HSSMatrixMPI.hpp"
+
+extern "C" {
+
+#include <starsh-randtlr.h>
+#include <starsh-electrodynamics.h>
+#include <starsh-spatial.h>
+#include <starsh-rbf.h>
+#include <starsh-fugaku_gc.h>
+
+}
+
 using namespace strumpack;
 using namespace strumpack::HSS;
 
@@ -84,6 +95,7 @@ int run(int argc, char* argv[]) {
   } break;
   case 'U': { // upper triangular Toeplitz
     if (argc > 2) m = stoi(argv[2]);
+
     if (argc <= 2 || m < 0) {
       cout << "# matrix dimension should be positive integer" << endl;
       usage();
@@ -173,7 +185,7 @@ int run(int argc, char* argv[]) {
   // double dense_maker_time = std::chrono::duration_cast<
   //   std::chrono::milliseconds>(stop_dense_maker - start_dense_maker).count();
 
-  MPI_Barrier(MPI_COMM_WORLD);
+  // MPI_Barrier(MPI_COMM_WORLD);
   // if (hss_opts.verbose()) Hdense.print("H");
 
   // MPI_Barrier(MPI_COMM_WORLD);
@@ -301,8 +313,8 @@ int run(int argc, char* argv[]) {
   auto Bnorm = B.normF();
   double solve_error = Bchecknorm / Bnorm;
   if (!mpi_rank())
-    cout << "# relative error = ||B-H*(H\\B)||_F/||B||_F = "
-         << Bchecknorm / Bnorm << endl;
+    cout << "# relative error = ||B - H * (H\\B) || _F/||B||_F = "
+         << solve_error << endl;
   // if (B.active() && Bchecknorm / Bnorm > SOLVE_TOLERANCE) {
   //   if (!mpi_rank())
   //     cout << "ERROR: ULV solve relative error too big!!" << endl;
@@ -310,10 +322,14 @@ int run(int argc, char* argv[]) {
   // }
 
   if (!mpi_rank()) {
-    std::cout << "RESULT: " << compress_time << ","
+    std::cout << "RESULT: "
+              << compress_time << ","
               << init_time << ","
-              << solve_error << "," <<  ulv_time << ","
-              << Hrank << "," << m
+              << solve_error << ","
+              << ulv_time << ","
+              << Hrank << ","
+              << m << ","
+              << hss_opts.leaf_size() << ","
               << std::endl;
   }
 
