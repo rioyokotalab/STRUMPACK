@@ -50,12 +50,20 @@ using namespace strumpack::HSS;
 #define ERROR_TOLERANCE 1e1
 #define SOLVE_TOLERANCE 1e-12
 
+int ndim;
+STARSH_kernel *s_kernel;
+void *starsh_data;
+STARSH_int * starsh_index;
+
 int run(int argc, char* argv[]) {
   int m = 150;
   int n = 1;
 
   HSSOptions<double> hss_opts;
   hss_opts.set_verbose(false);
+
+  enum STARSH_PARTICLES_PLACEMENT place = STARSH_PARTICLES_UNIFORM;
+  double add_diag = 1e-8;
 
   auto usage = [&]() {
     if (!mpi_rank()) {
@@ -114,12 +122,35 @@ int run(int argc, char* argv[]) {
       usage();
     }
     A = DistributedMatrix<double>(&grid, m, m);
-    A.eye();
-    DistributedMatrix<double> U(&grid, m, max(1, int(0.3*m)));
-    DistributedMatrix<double> V(&grid, m, max(1, int(0.3*m)));
-    U.random();
-    V.random();
-    gemm(Trans::N, Trans::C, 1./m, U, V, 1., A);
+    ndim = 3;
+    s_kernel = starsh_laplace_block_kernel;
+    starsh_laplace_grid_generate(
+                                 (STARSH_laplace**)&starsh_data, m,
+                                 ndim, hss_opts.leaf_size(),
+                                 m / hss_opts.leaf_size(),
+                                 add_diag);
+    starsh_index = (STARSH_int*)malloc(sizeof(STARSH_int) * m);
+    for (int j = 0; j < m; ++j) {
+      starsh_index[j] = j;
+    }
+
+    for (int i = 0; i < m; ++i) {
+      for (int j = 0; j < m; ++j) {
+        double value;
+        s_kernel(1, 1,
+                 starsh_index + i, starsh_index + j,
+                 starsh_data, starsh_data, &value, 1);
+        A.global(i, j, value);
+      }
+    }
+    free(starsh_index);
+
+    // A.eye();
+    // DistributedMatrix<double> U(&grid, m, max(1, int(0.3*m)));
+    // DistributedMatrix<double> V(&grid, m, max(1, int(0.3*m)));
+    // U.random();
+    // V.random();
+    // gemm(Trans::N, Trans::C, 1./m, U, V, 1., A);
   } break;
   case 'f': { // matrix from a file
     DenseMatrix<double> Aseq;

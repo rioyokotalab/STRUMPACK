@@ -15,5 +15,5 @@ cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/gitrepos/STRUMPACK/build \
       -DCMAKE_CXX_FLAGS="$(pkg-config --cflags starsh)" -DCMAKE_EXE_LINKER_FLAGS="$(pkg-config --libs starsh)"
 
 
-make -j install
-make -j examples
+VERBOSE=1 make install
+VERBOSE=1 make examples
