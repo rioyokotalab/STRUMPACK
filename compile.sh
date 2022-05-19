@@ -3,8 +3,9 @@ module load gcc/11.2.0 intel-mpi intel-mkl/2022.0.0 cmake/3.22.3 intel-itac inte
 
 export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/home/acb10922qh/gitrepos/lorapo/stars-h-rio/build/installdir/lib/pkgconfig
 
-rm -rf build
-mkdir build
+ROOT_FOLDER=$PWD
+# rm -rf build
+# mkdir build
 cd build
 export LDFLAGS="$(pkg-config --libs starsh)"
 cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/gitrepos/STRUMPACK/build \
@@ -23,4 +24,6 @@ cd /home/acb10922qh/gitrepos/STRUMPACK/build/test
 
 make -j install
 
-make -j examples
+cd $ROOT_FOLDER
+
+mpirun -n 4 ./build/test/test_HSS_mpi L 1024 --hss_verbose

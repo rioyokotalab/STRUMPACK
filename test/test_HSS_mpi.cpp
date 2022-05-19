@@ -54,37 +54,37 @@ STARSH_kernel *s_kernel;
 STARSH_laplace *starsh_data;
 STARSH_int * starsh_index;
 
-double starsh_laplace_point_kernel(STARSH_int *irow,
-                                   STARSH_int *icol,
-                                   STARSH_laplace *row_data,
-                                   STARSH_laplace *col_data)
-{
-  STARSH_laplace *data1 = row_data;
-  STARSH_laplace *data2 = col_data;
+// double starsh_laplace_point_kernel(STARSH_int *irow,
+//                                    STARSH_int *icol,
+//                                    STARSH_laplace *row_data,
+//                                    STARSH_laplace *col_data)
+// {
+//   STARSH_laplace *data1 = row_data;
+//   STARSH_laplace *data2 = col_data;
 
-  STARSH_int N = data1->N;
-  STARSH_int nblocks = data1->nblocks;
-  STARSH_int block_size = data1->block_size;
-  double PV = data1->PV;
-  int ndim = data1->ndim;
+//   STARSH_int N = data1->N;
+//   STARSH_int nblocks = data1->nblocks;
+//   STARSH_int block_size = data1->block_size;
+//   double PV = data1->PV;
+//   int ndim = data1->ndim;
 
-  double *x1[ndim], *x2[ndim];
+//   double *x1[ndim], *x2[ndim];
 
-  x1[0] = data1->particles.point;
-  x2[0] = data2->particles.point;
-  for (int k = 1; k < ndim; ++k) {
-    x1[k] = x1[0] + k * data1->particles.count;
-    x2[k] = x2[0] + k * data2->particles.count;
-  }
+//   x1[0] = data1->particles.point;
+//   x2[0] = data2->particles.point;
+//   for (int k = 1; k < ndim; ++k) {
+//     x1[k] = x1[0] + k * data1->particles.count;
+//     x2[k] = x2[0] + k * data2->particles.count;
+//   }
 
-  double rij = 0;
-  for (int k = 0; k < ndim; ++k) {
-    rij += pow(x1[k][irow[0]] - x2[k][icol[0]], 2);
-  }
-  double out = 1 / (sqrt(rij) + PV);
+//   double rij = 0;
+//   for (int k = 0; k < ndim; ++k) {
+//     rij += pow(x1[k][irow[0]] - x2[k][icol[0]], 2);
+//   }
+//   double out = 1 / (sqrt(rij) + PV);
 
-  return out;
-}
+//   return out;
+// }
 
 int run(int argc, char* argv[]) {
   int m = 150;
@@ -160,7 +160,8 @@ int run(int argc, char* argv[]) {
                                  (STARSH_laplace**)&starsh_data, starsh_n,
                                  ndim, hss_opts.leaf_size(),
                                  m / hss_opts.leaf_size(),
-                                 add_diag);
+                                 add_diag,
+                                 place);
     starsh_index = (STARSH_int*)malloc(sizeof(STARSH_int) * m);
     for (int j = 0; j < m; ++j) {
       starsh_index[j] = j;
@@ -239,7 +240,7 @@ int run(int argc, char* argv[]) {
          << 100. * Hmem / Amem << "% of dense" << endl;
   }
 
-  // MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(MPI_COMM_WORLD);
   // auto start_dense_maker = std::chrono::system_clock::now();
   // auto Hdense = H.dense();
   // auto stop_dense_maker = std::chrono::system_clock::now();
@@ -249,6 +250,7 @@ int run(int argc, char* argv[]) {
   // MPI_Barrier(MPI_COMM_WORLD);
   // if (hss_opts.verbose()) Hdense.print("H");
 
+  // Hdense.print_to_file("Hdense", "dense.txt", 10);
   // MPI_Barrier(MPI_COMM_WORLD);
 
   // Hdense.scaled_add(-1., A);
@@ -391,6 +393,8 @@ int run(int argc, char* argv[]) {
               << Hrank << ","
               << m << ","
               << hss_opts.leaf_size() << ","
+              << hss_opts.abs_tol() << ","
+              << mpi_nprocs()
               << std::endl;
   }
 
