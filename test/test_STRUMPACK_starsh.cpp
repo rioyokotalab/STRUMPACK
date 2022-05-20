@@ -15,6 +15,10 @@ extern "C" {
 #include <starsh-fugaku_gc.h>
 }
 
+
+#include "structured/StructuredMatrix.hpp"
+#include "iterative/IterativeSolversMPI.hpp"
+
 using namespace strumpack;
 using namespace strumpack::HSS;
 
@@ -67,6 +71,37 @@ int run(int argc, char* argv[]) {
   starsh_file_grid_read_kmeans(md_file_name,
                                &starsh_data->particles,
                                N, ndim);
+
+  // Define an options object, set to the default options.
+  structured::StructuredOptions<double> options;
+  // Suppress some output
+  options.set_verbose(false);
+  options.set_from_command_line(argc, argv);
+  options.set_type(structured::Type::HSS);
+  // user defined matrix-vector multiplication routine. This routine
+  // expects you to perform and return the product of an entire matrix
+  // vector product. Not a partial product.
+  auto Tmult2d =
+    [](Trans t,
+       const DenseMatrix<double>& R,
+       DenseMatrix<double>& S) {
+      // simply call PxGEMM using A2d
+      // gemm(t, Trans::N, double(1.), A2d, R, double(0.), S);
+      // A2d.mult(t, R, S); // same as gemm above
+    };
+
+  auto extract_laplace =
+    [](std::size_t i, std::size_t j) {
+      return starsh_laplace_point_kernel(starsh_index,
+                                         starsh_index,
+                                         starsh_data + i,
+                                         starsh_data + j);
+    };
+
+  auto Hmat = structured::construct_from_elements<double>((int)N,
+                                                          (int)N,
+                                                          extract_laplace,
+                                                          options);
 
   MPI_Barrier(MPI_COMM_WORLD);
 
