@@ -27,7 +27,6 @@ STARSH_laplace *starsh_data;
 STARSH_int * starsh_index;
 
 int run(int argc, char* argv[]) {
-  int m = 150;
   int n = 1;
 
   HSSOptions<double> hss_opts;
@@ -53,6 +52,21 @@ int run(int argc, char* argv[]) {
   };
 
   BLACSGrid grid(MPI_COMM_WORLD);
+
+  char * md_file_name = argv[1];
+  fprintf(stderr, "using file %s for data.\n", md_file_name);
+
+  int64_t ndim = 3;
+  STARSH_int N = std::atol(argv[2]);
+  starsh_data = (STARSH_laplace*)malloc(sizeof(STARSH_laplace));
+
+  starsh_data->N = N;
+  starsh_data->PV = 1e-8;
+  starsh_data->ndim = ndim;
+  s_kernel = starsh_laplace_block_kernel;
+  starsh_file_grid_read_kmeans(md_file_name,
+                               &starsh_data->particles,
+                               N, ndim);
 
   MPI_Barrier(MPI_COMM_WORLD);
 
