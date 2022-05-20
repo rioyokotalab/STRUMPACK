@@ -72,6 +72,10 @@ int run(int argc, char* argv[]) {
                                &starsh_data->particles,
                                N, ndim);
 
+  starsh_index = (STARSH_int*)malloc( N * sizeof(STARSH_int) );
+  for(STARSH_int i = 0; i < N; ++i)
+    starsh_index[i] = i;
+
   // Define an options object, set to the default options.
   structured::StructuredOptions<double> options;
   // Suppress some output
@@ -92,10 +96,10 @@ int run(int argc, char* argv[]) {
 
   auto extract_laplace =
     [](std::size_t i, std::size_t j) {
-      return starsh_laplace_point_kernel(starsh_index,
-                                         starsh_index,
-                                         starsh_data + i,
-                                         starsh_data + j);
+      return starsh_laplace_point_kernel(starsh_index + i,
+                                         starsh_index + j,
+                                         starsh_data,
+                                         starsh_data);
     };
 
   auto Hmat = structured::construct_from_elements<double>((int)N,
