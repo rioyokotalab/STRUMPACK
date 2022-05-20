@@ -19,13 +19,13 @@ if(STRUMPACK_USE_MPI)
   add_executable(test_sparse_mpi          test_sparse_mpi.cpp)
   add_executable(test_structure_reuse_mpi test_structure_reuse_mpi.cpp)
   add_executable(test_BLR_mpi             test_BLR_mpi.cpp)
-
-
+  add_executable(test_STRUMPACK_starsh    test_STRUMPACK_starsh.cpp)
 
   target_link_libraries(test_HSS_mpi strumpack)
   target_link_libraries(test_sparse_mpi strumpack)
   target_link_libraries(test_structure_reuse_mpi strumpack)
   target_link_libraries(test_BLR_mpi strumpack)
+  target_link_libraries(test_STRUMPACK_starsh strumpack)
 
   # TODO check whether this is supported?
   set(OVERSUBSCRIBEFLAG "--oversubscribe")

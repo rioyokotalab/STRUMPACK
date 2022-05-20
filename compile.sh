@@ -12,8 +12,7 @@ cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/gitrepos/STRUMPACK/build \
       -DTPL_BLAS_LIBRARIES="-L${MKLROOT}/lib/intel64 -Wl,--no-as-needed -lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl" \
       -DTPL_LAPACK_LIBRARIES="-L${MKLROOT}/lib/intel64 -Wl,--no-as-needed -lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl" \
       -DTPL_SCALAPACK_LIBRARIES="-L${MKLROOT}/lib/intel64 -lmkl_scalapack_lp64 -Wl,--no-as-needed -lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -lmkl_blacs_intelmpi_lp64 -lgomp -lpthread -lm -ldl" \
-      -DCMAKE_BUILD_TYPE=Release \
-      -DCMAKE_CXX_FLAGS="$(pkg-config --cflags starsh)" -DCMAKE_EXE_LINKER_FLAGS="$(pkg-config --libs starsh)" \
+      -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="$(pkg-config --cflags starsh)" -DCMAKE_EXE_LINKER_FLAGS="$(pkg-config --libs starsh)" \
       -DCMAKE_INSTALL_RPATH="/home/acb10922qh/gitrepos/lorapo/stars-h-rio/build/installdir/lib"
 
 
@@ -22,8 +21,13 @@ cd /home/acb10922qh/gitrepos/STRUMPACK/build/test
 
 /apps/centos7/gcc/11.2.0/bin/c++ -I/home/acb10922qh/gitrepos/lorapo/stars-h-rio/build/installdir/include -O3 -DNDEBUG -L/home/acb10922qh/gitrepos/lorapo/stars-h-rio/build/installdir/lib -lstarsh -Xlinker --enable-new-dtags -Xlinker -rpath -Xlinker /apps/intel/2022.1/mpi/2021.5.1/lib/release -Xlinker -rpath -Xlinker /apps/intel/2022.1/mpi/2021.5.1/lib -Xlinker --enable-new-dtags -Xlinker --enable-new-dtags -Xlinker -rpath -Xlinker /apps/intel/2022.1/mpi/2021.5.1/lib/release -Xlinker -rpath -Xlinker /apps/intel/2022.1/mpi/2021.5.1/lib -Xlinker --enable-new-dtags -L/home/apps/intel/2022.1/mpi/2021.5.1/lib CMakeFiles/test_HSS_mpi.dir/test_HSS_mpi.cpp.o -o test_HSS_mpi /home/acb10922qh/gitrepos/lorapo/stars-h-rio/build/installdir/lib/libstarsh.a   -Wl,-rpath,/home/acb10922qh/gitrepos/metis-5.1.0/lib ../libstrumpack.a /home/apps/intel/2022.1/mpi/2021.5.1/lib/libmpicxx.so /home/apps/intel/2022.1/mpi/2021.5.1/lib/libmpifort.so /home/apps/intel/2022.1/mpi/2021.5.1/lib/release/libmpi.so /lib64/librt.so /lib64/libdl.so /apps/centos7/gcc/11.2.0/lib64/libgomp.so -lpthread -L/apps/intel/2022.1/mkl/2022.0.2/lib/intel64 -lmkl_scalapack_lp64 -Wl,--no-as-needed -lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -lmkl_blacs_intelmpi_lp64 -lgomp -lpthread -lm -ldl -L/apps/intel/2022.1/mkl/2022.0.2/lib/intel64 -Wl,--no-as-needed -lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl /home/acb10922qh/gitrepos/metis-5.1.0/lib/libmetis.so -lgfortran -lquadmath
 
+/apps/centos7/gcc/11.2.0/bin/c++ -I/home/acb10922qh/gitrepos/lorapo/stars-h-rio/build/installdir/include -O3 -DNDEBUG -L/home/acb10922qh/gitrepos/lorapo/stars-h-rio/build/installdir/lib -lstarsh -Xlinker --enable-new-dtags -Xlinker -rpath -Xlinker /apps/intel/2022.1/mpi/2021.5.1/lib/release -Xlinker -rpath -Xlinker /apps/intel/2022.1/mpi/2021.5.1/lib -Xlinker --enable-new-dtags -Xlinker --enable-new-dtags -Xlinker -rpath -Xlinker /apps/intel/2022.1/mpi/2021.5.1/lib/release -Xlinker -rpath -Xlinker /apps/intel/2022.1/mpi/2021.5.1/lib -Xlinker --enable-new-dtags -L/home/apps/intel/2022.1/mpi/2021.5.1/lib CMakeFiles/test_STRUMPACK_starsh.dir/test_STRUMPACK_starsh.cpp.o -o test_STRUMPACK_starsh /home/acb10922qh/gitrepos/lorapo/stars-h-rio/build/installdir/lib/libstarsh.a   -Wl,-rpath,/home/acb10922qh/gitrepos/metis-5.1.0/lib ../libstrumpack.a /home/apps/intel/2022.1/mpi/2021.5.1/lib/libmpicxx.so /home/apps/intel/2022.1/mpi/2021.5.1/lib/libmpifort.so /home/apps/intel/2022.1/mpi/2021.5.1/lib/release/libmpi.so /lib64/librt.so /lib64/libdl.so /apps/centos7/gcc/11.2.0/lib64/libgomp.so -lpthread -L/apps/intel/2022.1/mkl/2022.0.2/lib/intel64 -lmkl_scalapack_lp64 -Wl,--no-as-needed -lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -lmkl_blacs_intelmpi_lp64 -lgomp -lpthread -lm -ldl -L/apps/intel/2022.1/mkl/2022.0.2/lib/intel64 -Wl,--no-as-needed -lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl /home/acb10922qh/gitrepos/metis-5.1.0/lib/libmetis.so -lgfortran -lquadmath
+
 make -j install
 
-cd $ROOT_FOLDER
+cd $ROOT_FOLDER/build
+make examples
 
+cd $ROOT_FOLDER
+mpirun -n 4 ./build/test/test_STRUMPACK_starsh
 mpirun -n 4 ./build/test/test_HSS_mpi L 1024 --hss_verbose

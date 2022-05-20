@@ -158,8 +158,7 @@ int run(int argc, char* argv[]) {
     STARSH_int starsh_n = (STARSH_int)m;
     starsh_laplace_grid_generate(
                                  (STARSH_laplace**)&starsh_data, starsh_n,
-                                 ndim, hss_opts.leaf_size(),
-                                 m / hss_opts.leaf_size(),
+                                 ndim,
                                  add_diag,
                                  place);
     starsh_index = (STARSH_int*)malloc(sizeof(STARSH_int) * m);
