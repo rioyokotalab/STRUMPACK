@@ -51,40 +51,8 @@ using namespace strumpack::HSS;
 
 int ndim;
 STARSH_kernel *s_kernel;
-STARSH_laplace *starsh_data;
+STARSH_molecules *starsh_data;
 STARSH_int * starsh_index;
-
-// double starsh_laplace_point_kernel(STARSH_int *irow,
-//                                    STARSH_int *icol,
-//                                    STARSH_laplace *row_data,
-//                                    STARSH_laplace *col_data)
-// {
-//   STARSH_laplace *data1 = row_data;
-//   STARSH_laplace *data2 = col_data;
-
-//   STARSH_int N = data1->N;
-//   STARSH_int nblocks = data1->nblocks;
-//   STARSH_int block_size = data1->block_size;
-//   double PV = data1->PV;
-//   int ndim = data1->ndim;
-
-//   double *x1[ndim], *x2[ndim];
-
-//   x1[0] = data1->particles.point;
-//   x2[0] = data2->particles.point;
-//   for (int k = 1; k < ndim; ++k) {
-//     x1[k] = x1[0] + k * data1->particles.count;
-//     x2[k] = x2[0] + k * data2->particles.count;
-//   }
-
-//   double rij = 0;
-//   for (int k = 0; k < ndim; ++k) {
-//     rij += pow(x1[k][irow[0]] - x2[k][icol[0]], 2);
-//   }
-//   double out = 1 / (sqrt(rij) + PV);
-
-//   return out;
-// }
 
 int run(int argc, char* argv[]) {
   int m = 150;
@@ -156,11 +124,12 @@ int run(int argc, char* argv[]) {
     ndim = 3;
     // s_kernel = starsh_laplace_block_kernel ;
     STARSH_int starsh_n = (STARSH_int)m;
-    starsh_laplace_grid_generate(
-                                 (STARSH_laplace**)&starsh_data, starsh_n,
-                                 ndim,
-                                 add_diag,
-                                 place);
+    starsh_data = (STARSH_molecules*)malloc(sizeof(STARSH_molecules));
+    starsh_data->N = N;
+    starsh_data->ndim = ndim;
+    starsh_file_grid_read_kmeans(argv[3],
+                                 &(starsh_data->particles),
+                                 N, ndim);
     starsh_index = (STARSH_int*)malloc(sizeof(STARSH_int) * m);
     for (int j = 0; j < m; ++j) {
       starsh_index[j] = j;
@@ -168,7 +137,7 @@ int run(int argc, char* argv[]) {
 
     for (STARSH_int i = 0; i < m; ++i) {
       for (STARSH_int j = 0; j < m; ++j) {
-        double value = starsh_laplace_point_kernel(starsh_index + i, starsh_index + j,
+        double value = starsh_yukawa_point_kernel(starsh_index + i, starsh_index + j,
                                                    starsh_data, starsh_data);
         A.global(i, j, value);
       }

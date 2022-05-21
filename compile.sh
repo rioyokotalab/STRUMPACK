@@ -5,7 +5,7 @@ export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/home/acb10922qh/gitrepos/lorapo/stars-h
 
 ROOT_FOLDER=$PWD
 # rm -rf build
-# mkdir build
+mkdir build
 cd build
 export LDFLAGS="$(pkg-config --libs starsh)"
 cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/gitrepos/STRUMPACK/build \
