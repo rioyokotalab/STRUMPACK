@@ -125,11 +125,11 @@ int run(int argc, char* argv[]) {
     // s_kernel = starsh_laplace_block_kernel ;
     STARSH_int starsh_n = (STARSH_int)m;
     starsh_data = (STARSH_molecules*)malloc(sizeof(STARSH_molecules));
-    starsh_data->N = N;
+    starsh_data->N = m;
     starsh_data->ndim = ndim;
     starsh_file_grid_read_kmeans(argv[3],
                                  &(starsh_data->particles),
-                                 N, ndim);
+                                 m, ndim);
     starsh_index = (STARSH_int*)malloc(sizeof(STARSH_int) * m);
     for (int j = 0; j < m; ++j) {
       starsh_index[j] = j;
