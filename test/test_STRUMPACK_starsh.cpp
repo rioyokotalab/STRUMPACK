@@ -106,9 +106,12 @@ int run(int argc, char* argv[]) {
     [](const std::vector<std::size_t>& I,
        const std::vector<std::size_t>& J,
        DistributedMatrix<double>& block) {
-
+      for (int i = 0; i < I.size(); ++i) {
+        std::cout << I[i] << std::endl;
+      }
     };
 
+  std::cout << "start HSS construction\n";
   auto Hmat = structured::construct_partially_matrix_free<double>(&grid,
                                                                   (int)N,
                                                                   (int)N,

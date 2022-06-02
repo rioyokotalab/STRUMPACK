@@ -29,5 +29,5 @@ cd $ROOT_FOLDER/build
 make examples
 
 cd $ROOT_FOLDER
-mpirun -n 1 ./build/test/test_STRUMPACK_starsh /groups/gca50014/md_data/57114x1.dat 57114
+mpirun -n 2 ./build/test/test_STRUMPACK_starsh /groups/gca50014/md_data/57114x1.dat 57114
 # mpirun -n 4 ./build/test/test_HSS_mpi L 1024 --hss_verbose
