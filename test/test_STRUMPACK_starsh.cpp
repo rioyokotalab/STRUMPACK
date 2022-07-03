@@ -33,6 +33,7 @@ STARSH_int * starsh_index;
 int run(int argc, char* argv[]) {
   int n = 1;
 
+  MPIComm c;
   HSSOptions<double> hss_opts;
   hss_opts.set_verbose(false);
 
@@ -114,20 +115,28 @@ int run(int argc, char* argv[]) {
        DistributedMatrix<double>& block) {
       for (int i = 0; i < I.size(); ++i) {
         for (int j = 0; j < J.size(); ++j) {
-          double value = func(I[i], J[j]);
+//          double value = func(I[i], J[j]);
+          double value = 0;
           block.global(i, j, value);
         }
         std::cout << I[i] << std::endl;
       }
     };
 
+  auto starsh_matrix =
+    [](int i, int j) {
+      return 1.0;
+    };
+
   std::cout << "start HSS construction\n";
-  auto Hmat = structured::construct_partially_matrix_free<double>(&grid,
-                                                                  (int)N,
-                                                                  (int)N,
-                                                                  Amult2d,
-                                                                  extract_laplace_block,
-                                                                  options);
+  auto HSS_matrix = strumpack::structured::construct_from_elements<double>(
+    c,
+    &grid,
+    N,
+    N,
+    starsh_matrix,
+    options
+  );
 
   MPI_Barrier(MPI_COMM_WORLD);
 
