@@ -92,21 +92,31 @@ int run(int argc, char* argv[]) {
       // simply call PxGEMM using A2d
       // gemm(t, Trans::N, double(1.), A2d, R, double(0.), S);
       // A2d.mult(t, R, S); // same as gemm above
+
+      // This lambda should output a full-matvec for a given process.
+      // A2d * R = S.
+      // generate A2d blocks.
+      // loop over all the rows of A2d.
+      // rowblocks, colblocks -> row matrix dim / block size
     };
 
-  auto extract_laplace =
-    [](std::size_t i, std::size_t j) {
-      return starsh_laplace_point_kernel(starsh_index + i,
-                                         starsh_index + j,
-                                         starsh_data,
-                                         starsh_data);
-    };
+  // auto extract_laplace =
+  //   [](std::size_t i, std::size_t j) {
+  //     return starsh_laplace_point_kernel(starsh_index + i,
+  //                                        starsh_index + j,
+  //                                        starsh_data,
+  //                                        starsh_data);
+  //   };
 
   auto extract_laplace_block =
     [](const std::vector<std::size_t>& I,
        const std::vector<std::size_t>& J,
        DistributedMatrix<double>& block) {
       for (int i = 0; i < I.size(); ++i) {
+        for (int j = 0; j < J.size(); ++j) {
+          double value = func(I[i], J[j]);
+          block.global(i, j, value);
+        }
         std::cout << I[i] << std::endl;
       }
     };

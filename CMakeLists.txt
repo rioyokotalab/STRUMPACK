@@ -28,6 +28,8 @@ include(CheckLibraryExists)
 # include(CMakePushCheckState)
 include(CheckCXXSourceCompiles)
 
+include(GNUInstallDirs)
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/Modules")
 
 # figure out Fortran/C name mangling
@@ -263,11 +265,11 @@ if(DEFINED TPL_LAPACK_LIBRARIES)
   if(TARGET OpenMP::OpenMP_Fortran)
     try_compile(STRUMPACK_TPL_LAPACK_WORKS ${_SCRATCH_DIR}
       SOURCES ${CMAKE_SOURCE_DIR}/cmake/test_lapack.f90
-      LINK_LIBRARIES ${TPL_LAPACK_LIBRARIES} OpenMP::OpenMP_Fortran)
+      LINK_LIBRARIES ${TPL_LAPACK_LIBRARIES} ${BLAS_LIBRARIES} OpenMP::OpenMP_Fortran)
   else()
     try_compile(STRUMPACK_TPL_LAPACK_WORKS ${_SCRATCH_DIR}
       SOURCES ${CMAKE_SOURCE_DIR}/cmake/test_lapack.f90
-      LINK_LIBRARIES ${TPL_LAPACK_LIBRARIES})
+      LINK_LIBRARIES ${TPL_LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
   endif()
   if(STRUMPACK_TPL_LAPACK_WORKS)
     message(STATUS
@@ -283,12 +285,12 @@ if(DEFINED TPL_LAPACK_LIBRARIES)
     if(TARGET OpenMP::OpenMP_Fortran)
       try_compile(STRUMPACK_TPL_LAPACK_WITH_THREADS_WORKS ${_SCRATCH_DIR}
         SOURCES ${CMAKE_SOURCE_DIR}/cmake/test_lapack.f90
-        LINK_LIBRARIES ${TPL_LAPACK_LIBRARIES}
+        LINK_LIBRARIES ${TPL_LAPACK_LIBRARIES} ${BLAS_LIBRARIES}
         Threads::Threads OpenMP::OpenMP_Fortran)
     else()
       try_compile(STRUMPACK_TPL_LAPACK_WITH_THREADS_WORKS ${_SCRATCH_DIR}
         SOURCES ${CMAKE_SOURCE_DIR}/cmake/test_lapack.f90
-        LINK_LIBRARIES ${TPL_LAPACK_LIBRARIES} Threads::Threads)
+        LINK_LIBRARIES ${TPL_LAPACK_LIBRARIES} ${BLAS_LIBRARIES} Threads::Threads)
     endif()
     if(STRUMPACK_TPL_LAPACK_WITH_THREADS_WORKS)
       message(STATUS
@@ -723,7 +725,8 @@ install(FILES
   DESTINATION include)
 
 install(TARGETS strumpack EXPORT STRUMPACKTargets
-  LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 
 # export targets and all
