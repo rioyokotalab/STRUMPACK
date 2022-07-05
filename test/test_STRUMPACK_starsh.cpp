@@ -99,60 +99,54 @@ int run(int argc, char* argv[]) {
   }
 
   auto begin_construct = std::chrono::system_clock::now();
-  // auto HSS_matrix = strumpack::structured::construct_from_elements<double>(
-  //   c,
-  //   &grid,
-  //   N,
-  //   N,
-  //   starsh_matrix,
-  //   options
-  // );
-  auto A = DistributedMatrix<double>(&grid, N, N);
+  auto HSS_matrix = strumpack::structured::construct_from_elements<double>(
+    c,
+    &grid,
+    N,
+    N,
+    starsh_matrix,
+    options
+  );
+  // auto A = DistributedMatrix<double>(&grid, N, N);
   // for (STARSH_int i = 0; i < N; ++i) {
   //   for (STARSH_int j = 0; j < N; ++j) {
-  //     double value = starsh_matrix(i, j);
+  //     double value = starsh_yukawa_point_kernel(starsh_index + i, starsh_index + j,
+  //                                               starsh_data, starsh_data);
   //     A.global(i, j, value);
   //   }
   // }
-
-  for (STARSH_int i = 0; i < N; ++i) {
-    for (STARSH_int j = 0; j < N; ++j) {
-      double value = starsh_yukawa_point_kernel(starsh_index + i, starsh_index + j,
-                                                starsh_data, starsh_data);
-      A.global(i, j, value);
-    }
-  }
-  HSSMatrixMPI<double> HSS_matrix(A, options);
+  // HSSMatrixMPI<double> HSS_matrix(A, options);
   free(starsh_index);
   auto end_construct = std::chrono::system_clock::now();
 
-  // auto HSS_rank_pre_factorization = HSS_matrix.get()->rank();
-  auto HSS_rank_pre_factorization = HSS_matrix.max_rank();
+  auto HSS_rank_pre_factorization = HSS_matrix.get()->rank();
+  // auto HSS_rank_pre_factorization = HSS_matrix.max_rank();
 
   DistributedMatrix<double> B(&grid, N, 1), X(&grid, N, 1);
   X.random();
   // B = HSS * X
-  HSS_matrix.mult(Trans::N, X, B);
+  HSS_matrix.get()->mult(Trans::N, X, B);
+  // HSS_matrix.mult(Trans::N, X, B);
 
   if (!mpi_rank()) {
     std::cout << "start HSS factor.\n";
   }
 
   auto begin_factor = std::chrono::system_clock::now();
-  // HSS_matrix.get()->factor();
-  HSS_matrix.factor();
+  HSS_matrix.get()->factor();
+  // HSS_matrix.factor();
   auto end_factor = std::chrono::system_clock::now();
 
-  // auto HSS_rank_post_factorization = HSS_matrix.get()->rank();
-  auto HSS_rank_post_factorization = HSS_matrix.max_rank();
+  auto HSS_rank_post_factorization = HSS_matrix.get()->rank();
+  // auto HSS_rank_post_factorization = HSS_matrix.max_rank();
 
   if (!mpi_rank()) {
     std::cout << "start HSS solve.\n";
   }
 
   auto begin_solve = std::chrono::system_clock::now();
-  // HSS_matrix.get()->solve(B);
-  HSS_matrix.solve(B);
+  HSS_matrix.get()->solve(B);
+  // HSS_matrix.solve(B);
   auto end_solve = std::chrono::system_clock::now();
 
 
@@ -169,6 +163,7 @@ int run(int argc, char* argv[]) {
 
   if (!mpi_rank()) {
     std::cout << "RESULT: np-- " << mpi_nprocs()
+              << " --N " << N
               << " --solve_error " << solve_error
               << " --construct_time " << construct_time
               << " --factor_time " << factor_time
