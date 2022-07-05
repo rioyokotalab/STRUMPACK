@@ -15,7 +15,7 @@ export OMP_PLACES=cores
 export OMP_NUM_THREADS=40
 # export I_MPI_DEBUG=4
 
-mpirun -n 2 -ppn 1 -f $SGE_JOB_HOSTLIST ./build/test/test_STRUMPACK_starsh \
+mpirun -n 4 -ppn 1 -f $SGE_JOB_HOSTLIST ./build/test/test_STRUMPACK_starsh \
        /groups/gca50014/md_data/57114x1.dat 57114 \
        --hss_rel_tol 1e-9
 
