@@ -86,49 +86,17 @@ int run(int argc, char* argv[]) {
   // user defined matrix-vector multiplication routine. This routine
   // expects you to perform and return the product of an entire matrix
   // vector product. Not a partial product.
-  auto Amult2d =
-    [](Trans t,
-       const DistributedMatrix<double>& R,
-       DistributedMatrix<double>& S) {
-      // simply call PxGEMM using A2d
-      // gemm(t, Trans::N, double(1.), A2d, R, double(0.), S);
-      // A2d.mult(t, R, S); // same as gemm above
-
-      // This lambda should output a full-matvec for a given process.
-      // A2d * R = S.
-      // generate A2d blocks.
-      // loop over all the rows of A2d.
-      // rowblocks, colblocks -> row matrix dim / block size
-    };
-
-  // auto extract_laplace =
-  //   [](std::size_t i, std::size_t j) {
-  //     return starsh_laplace_point_kernel(starsh_index + i,
-  //                                        starsh_index + j,
-  //                                        starsh_data,
-  //                                        starsh_data);
-  //   };
-
-  auto extract_laplace_block =
-    [](const std::vector<std::size_t>& I,
-       const std::vector<std::size_t>& J,
-       DistributedMatrix<double>& block) {
-      for (int i = 0; i < I.size(); ++i) {
-        for (int j = 0; j < J.size(); ++j) {
-//          double value = func(I[i], J[j]);
-          double value = 0;
-          block.global(i, j, value);
-        }
-        std::cout << I[i] << std::endl;
-      }
-    };
 
   auto starsh_matrix =
     [](int i, int j) {
-      return 1.0;
+      return starsh_yukawa_point_kernel(starsh_index + i, starsh_index + j,
+                                        starsh_data, starsh_data);
     };
 
-  std::cout << "start HSS construction\n";
+  if (!mpi_rank()) {
+    std::cout << "start HSS construction\n";
+  }
+
   auto HSS_matrix = strumpack::structured::construct_from_elements<double>(
     c,
     &grid,
@@ -138,7 +106,43 @@ int run(int argc, char* argv[]) {
     options
   );
 
+  auto HSS_rank_pre_factorization = HSS_matrix.get()->rank();
+
+  DistributedMatrix<double> B(&grid, N, 1), X(&grid, N, 1);
+  X.random();
+
+  auto begin_factor = std::chrono::system_clock::now();
+  HSS_matrix.get()->factor();
+  auto end_factor = std::chrono::system_clock::now();
+
+  auto HSS_rank_post_factorization = HSS_matrix.get()->rank();
+
+  auto begin_solve = std::chrono::system_clock::now();
+  HSS_matrix.get()->solve(B);
+  auto end_solve = std::chrono::system_clock::now();
+
+
+
+  double factor_time = std::chrono::duration_cast<
+    std::chrono::milliseconds>(end_factor - begin_factor).count();
+  double solve_time = std::chrono::duration_cast<
+    std::chrono::milliseconds>(end_solve - begin_solve).count();
+
+  double solve_error = B.scaled_add(-1., X).normF() / X.normF();
+
   MPI_Barrier(MPI_COMM_WORLD);
+
+  if (!mpi_rank()) {
+    std::cout << "RESULT: np-- " << mpi_nprocs()
+              << " --solve_error " << solve_error
+              << " --factor_time " << factor_time
+              << " --solve_time " << solve_time
+              << " --pre_factor_rank " << HSS_rank_pre_factorization
+              << " --post_factor_rank " << HSS_rank_post_factorization
+              << ""
+              << std::endl;
+  }
+
 
   return 0;
 }

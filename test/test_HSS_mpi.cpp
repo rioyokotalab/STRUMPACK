@@ -158,7 +158,7 @@ int run(int argc, char* argv[]) {
   double init_time = std::chrono::duration_cast<
     std::chrono::milliseconds>(stop_init - start_init).count();
 
-  if (hss_opts.verbose()) A.print("A");
+  //if (hss_opts.verbose()) A.print("A");
   if (!mpi_rank()) cout << "# tol = " << hss_opts.rel_tol() << endl;
 
   auto start_compress = std::chrono::system_clock::now();
