@@ -97,32 +97,55 @@ int run(int argc, char* argv[]) {
     std::cout << "start HSS construction\n";
   }
 
-  auto HSS_matrix = strumpack::structured::construct_from_elements<double>(
-    c,
-    &grid,
-    N,
-    N,
-    starsh_matrix,
-    options
-  );
+  auto begin_construct = std::chrono::system_clock::now();
+  // auto HSS_matrix = strumpack::structured::construct_from_elements<double>(
+  //   c,
+  //   &grid,
+  //   N,
+  //   N,
+  //   starsh_matrix,
+  //   options
+  // );
+  auto A = DistributedMatrix<double>(&grid, N, N);
+  for (STARSH_int i = 0; i < N; ++i) {
+    for (STARSH_int j = 0; j < N; ++j) {
+      double value = starsh_matrix(i, j);
+      A.global(i, j, value);
+    }
+  }
+  HSSMatrixMPI<double> HSS_matrix(A, options);
+  auto end_construct = std::chrono::system_clock::now();
 
-  auto HSS_rank_pre_factorization = HSS_matrix.get()->rank();
+  // auto HSS_rank_pre_factorization = HSS_matrix.get()->rank();
+  auto HSS_rank_pre_factorization = HSS_matrix.max_rank();
 
   DistributedMatrix<double> B(&grid, N, 1), X(&grid, N, 1);
   X.random();
 
+  if (!mpi_rank()) {
+    std::cout << "start HSS factor.\n";
+  }
+
   auto begin_factor = std::chrono::system_clock::now();
-  HSS_matrix.get()->factor();
+  // HSS_matrix.get()->factor();
+  HSS_matrix.factor();
   auto end_factor = std::chrono::system_clock::now();
 
-  auto HSS_rank_post_factorization = HSS_matrix.get()->rank();
+  // auto HSS_rank_post_factorization = HSS_matrix.get()->rank();
+  auto HSS_rank_post_factorization = HSS_matrix.max_rank();
+
+  if (!mpi_rank()) {
+    std::cout << "start HSS solve.\n";
+  }
 
   auto begin_solve = std::chrono::system_clock::now();
-  HSS_matrix.get()->solve(B);
+  // HSS_matrix.get()->solve(B);
+  HSS_matrix.solve(B);
   auto end_solve = std::chrono::system_clock::now();
 
 
-
+  double construct_time = std::chrono::duration_cast<
+    std::chrono::milliseconds>(end_construct - begin_construct).count();
   double factor_time = std::chrono::duration_cast<
     std::chrono::milliseconds>(end_factor - begin_factor).count();
   double solve_time = std::chrono::duration_cast<
@@ -135,6 +158,7 @@ int run(int argc, char* argv[]) {
   if (!mpi_rank()) {
     std::cout << "RESULT: np-- " << mpi_nprocs()
               << " --solve_error " << solve_error
+              << " --construct_time " << construct_time
               << " --factor_time " << factor_time
               << " --solve_time " << solve_time
               << " --pre_factor_rank " << HSS_rank_pre_factorization
