@@ -14,7 +14,8 @@ export CXX=mpiFCC
 export FX=mpifrt
 CXX=mpiFCC FC=mpifrt CC=mpifcc cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/gitrepos/STRUMPACK/build \
 	-DTPL_SCALAPACK_LIBRARIES="-fopenmp -SSL2BLAMP -SCALAPACK" \
-	-DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="$(pkg-config --cflags starsh) -Nclang -fopenmp" -DCMAKE_EXE_LINKER_FLAGS="$(pkg-config --libs starsh)" \
+	-DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="$(pkg-config --cflags starsh) -Nclang -fopenmp" \
+        -DCMAKE_EXE_LINKER_FLAGS="$(pkg-config --libs starsh)" \
         -DCMAKE_INSTALL_RPATH="$HOME/gitrepos/lorapo/stars-h-rio/build/installdir/lib" \
         -DTPL_METIS_INCLUDE_DIRS=$METIS_DIR/include -DTPL_METIS_LIBRARIES=$METIS_DIR/lib/libmetis.a
 make -j install

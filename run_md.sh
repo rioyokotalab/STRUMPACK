@@ -21,5 +21,4 @@ export OMP_NUM_THREADS=12
 export XOS_MMM_L_PAGING_POLICY="demand:demand:demand"
 
 mpiexec -stdout job_stdout.log -stderr job_stderr.log ./build/test/test_STRUMPACK_starsh \
-       $HOME/57114x64.dat 3655296 \
-       --hss_rel_tol 1e-9
+       $HOME/57114x64.dat 3655280 --hss_rel_tol 1e-9
