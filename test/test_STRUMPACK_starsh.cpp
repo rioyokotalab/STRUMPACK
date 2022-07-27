@@ -27,7 +27,7 @@ using namespace strumpack::HSS;
 
 int ndim;
 STARSH_kernel *s_kernel;
-STARSH_molecules *starsh_data;
+STARSH_laplace *starsh_data;
 STARSH_int * starsh_index;
 
 int run(int argc, char* argv[]) {
@@ -58,20 +58,21 @@ int run(int argc, char* argv[]) {
 
   BLACSGrid grid(MPI_COMM_WORLD);
 
-  char * md_file_name = argv[1];
-  fprintf(stderr, "using file %s for data.\n", md_file_name);
+  // char * md_file_name = argv[1];
+  // fprintf(stderr, "using file %s for data.\n", md_file_name);
 
   int64_t ndim = 3;
-  STARSH_int N = std::atol(argv[2]);
-  starsh_data = (STARSH_molecules*)malloc(sizeof(STARSH_molecules));
+  STARSH_int N = std::atol(argv[1]);
+  starsh_data = (STARSH_laplace*)malloc(sizeof(STARSH_laplace));
 
   starsh_data->N = N;
-  // starsh_data->PV = 1e-8;
+  starsh_data->PV = add_diag;
   starsh_data->ndim = ndim;
-  s_kernel = starsh_laplace_block_kernel;
-  starsh_file_grid_read_kmeans(md_file_name,
-                               &(starsh_data->particles),
-                               N, ndim);
+//`  s_kernel = starsh_laplace_point_kernel;
+  starsh_laplace_grid_generate(&starsh_data, N, ndim, add_diag, place);
+  // starsh_file_grid_read_kmeans(md_file_name,
+  //                              &(starsh_data->particles),
+  //                              N, ndim);
 
   starsh_index = (STARSH_int*)malloc( N * sizeof(STARSH_int) );
   for(STARSH_int i = 0; i < N; ++i) {
@@ -84,14 +85,12 @@ int run(int argc, char* argv[]) {
   options.set_verbose(false);
   options.set_from_command_line(argc, argv);
   options.set_type(structured::Type::HSS);
-  // user defined matrix-vector multiplication routine. This routine
-  // expects you to perform and return the product of an entire matrix
-  // vector product. Not a partial product.
+
 
   auto starsh_matrix =
     [](int i, int j) {
-      return starsh_yukawa_point_kernel(starsh_index + i, starsh_index + j,
-                                        starsh_data, starsh_data);
+      return starsh_laplace_point_kernel(starsh_index + i, starsh_index + j,
+                      starsh_data, starsh_data);
     };
 
   if (!mpi_rank()) {
