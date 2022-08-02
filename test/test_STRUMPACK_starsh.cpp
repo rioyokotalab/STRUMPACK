@@ -38,7 +38,6 @@ int run(int argc, char* argv[]) {
   hss_opts.set_verbose(false);
 
   enum STARSH_PARTICLES_PLACEMENT place = STARSH_PARTICLES_UNIFORM;
-  double add_diag = 1e-8;
 
   auto usage = [&]() {
     if (!mpi_rank()) {
@@ -63,6 +62,7 @@ int run(int argc, char* argv[]) {
 
   int64_t ndim = 3;
   STARSH_int N = std::atol(argv[1]);
+  double add_diag = std::atof(argv[2]);
   starsh_data = (STARSH_laplace*)malloc(sizeof(STARSH_laplace));
 
   starsh_data->N = N;
@@ -163,6 +163,7 @@ int run(int argc, char* argv[]) {
   if (!mpi_rank()) {
     std::cout << "RESULT: np-- " << mpi_nprocs()
               << " --N " << N
+              << " --add_diag " << add_diag
               << " --solve_error " << solve_error
               << " --construct_time " << construct_time
               << " --factor_time " << factor_time

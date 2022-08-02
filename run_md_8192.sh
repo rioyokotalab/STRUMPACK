@@ -20,6 +20,5 @@ export OMP_BIND=close
 export OMP_NUM_THREADS=12
 export XOS_MMM_L_PAGING_POLICY="demand:demand:demand"
 
-mpiexec -stdout large_job_stdout.log -stderr large_job_stderr.log \
-        ./build/test/test_STRUMPACK_starsh \
-        $HOME/57114x512.dat 29242169 --hss_rel_tol 1e-9
+mpiexec -stdout out_8192.log -stderr err_8192.log ./build/test/test_STRUMPACK_starsh 1048576 1e-11 --hss_rel_tol 1e-9
+mpiexec -stdout out_8192.log -stderr err_8192.log ./build/test/test_STRUMPACK_starsh 1048576 1e-9 --hss_rel_tol 1e-9
