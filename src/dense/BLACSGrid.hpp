@@ -332,6 +332,7 @@ namespace strumpack {
           scalapack::Cblacs_gridinit(&ctxt_, "C", nprows_, npcols_);
           ctxt_T_ = scalapack::Csys2blacs_handle(comm_.comm());
           scalapack::Cblacs_gridinit(&ctxt_T_, "R", npcols_, nprows_);
+          layout(P_, nprows_, npcols_);
         }
         ctxt_all_ = scalapack::Csys2blacs_handle(comm_.comm());
         scalapack::Cblacs_gridinit(&ctxt_all_, "R", 1, P_);

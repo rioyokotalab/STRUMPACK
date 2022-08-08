@@ -38,6 +38,11 @@ using namespace strumpack::HSS;
 #define ERROR_TOLERANCE 1e2
 #define SOLVE_TOLERANCE 1e-12
 
+#include <starsh-randtlr.h>
+#include <starsh-electrodynamics.h>
+#include <starsh-spatial.h>
+#include <starsh-rbf.h>
+
 
 int run(int argc, char* argv[]) {
   int m = 100, n = 1;

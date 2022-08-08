@@ -1,6 +1,6 @@
 /*
  * STRUMPACK -- STRUctured Matrices PACKage, Copyright (c) 2014, The
- * Regents of the University of California, through Lawrence Berkeley
+nn * Regents of the University of California, through Lawrence Berkeley
  * National Laboratory (subject to receipt of any required approvals
  * from the U.S. Dept. of Energy).  All rights reserved.
  *
@@ -28,15 +28,31 @@
  */
 #include <cmath>
 #include <iostream>
+#include <chrono>
 using namespace std;
 
 #include "dense/DistributedMatrix.hpp"
 #include "HSS/HSSMatrixMPI.hpp"
+
+#include <starsh-randtlr.h>
+#include <starsh-electrodynamics.h>
+#include <starsh-spatial.h>
+#include <starsh-rbf.h>
+
+extern "C" {
+#include <starsh-fugaku_gc.h>
+}
+
 using namespace strumpack;
 using namespace strumpack::HSS;
 
 #define ERROR_TOLERANCE 1e1
 #define SOLVE_TOLERANCE 1e-12
+
+int ndim;
+STARSH_kernel *s_kernel;
+STARSH_molecules *starsh_data;
+STARSH_int * starsh_index;
 
 int run(int argc, char* argv[]) {
   int m = 150;
@@ -44,6 +60,9 @@ int run(int argc, char* argv[]) {
 
   HSSOptions<double> hss_opts;
   hss_opts.set_verbose(false);
+
+  enum STARSH_PARTICLES_PLACEMENT place = STARSH_PARTICLES_UNIFORM;
+  double add_diag = 1e-8;
 
   auto usage = [&]() {
     if (!mpi_rank()) {
@@ -64,6 +83,7 @@ int run(int argc, char* argv[]) {
   BLACSGrid grid(MPI_COMM_WORLD);
   DistributedMatrix<double> A;
 
+  auto start_init = std::chrono::system_clock::now();
   char test_problem = 'T';
   if (argc > 1) test_problem = argv[1][0];
   else usage();
@@ -80,19 +100,6 @@ int run(int argc, char* argv[]) {
       for (int i=0; i<m; i++)
         A.global(i, j, (i==j) ? 1. : 1./(1+abs(i-j)));
   } break;
-  case 'U': { // upper triangular Toeplitz
-    if (argc > 2) m = stoi(argv[2]);
-    if (argc <= 2 || m < 0) {
-      cout << "# matrix dimension should be positive integer" << endl;
-      usage();
-    }
-    A = DistributedMatrix<double>(&grid, m, m);
-    // TODO only loop over local rows and columns, get the global coordinate..
-    for (int j=0; j<m; j++)
-      for (int i=0; i<m; i++)
-        if (i > j) A.global(i, j, 0.);
-        else A.global(i, j, (i==j) ? 1. : 1./(1+abs(i-j)));
-  } break;
   case 'L': {
     if (argc > 2) m = stoi(argv[2]);
     if (argc <= 2 || m < 0) {
@@ -100,12 +107,28 @@ int run(int argc, char* argv[]) {
       usage();
     }
     A = DistributedMatrix<double>(&grid, m, m);
-    A.eye();
-    DistributedMatrix<double> U(&grid, m, max(1, int(0.3*m)));
-    DistributedMatrix<double> V(&grid, m, max(1, int(0.3*m)));
-    U.random();
-    V.random();
-    gemm(Trans::N, Trans::C, 1./m, U, V, 1., A);
+    ndim = 3;
+    // s_kernel = starsh_laplace_block_kernel ;
+    STARSH_int starsh_n = (STARSH_int)m;
+    starsh_data = (STARSH_molecules*)malloc(sizeof(STARSH_molecules));
+    starsh_data->N = m;
+    starsh_data->ndim = ndim;
+    starsh_file_grid_read_kmeans(argv[3],
+                                 &(starsh_data->particles),
+                                 m, ndim);
+    starsh_index = (STARSH_int*)malloc(sizeof(STARSH_int) * m);
+    for (int j = 0; j < m; ++j) {
+      starsh_index[j] = j;
+    }
+
+    for (STARSH_int i = 0; i < m; ++i) {
+      for (STARSH_int j = 0; j < m; ++j) {
+        double value = starsh_yukawa_point_kernel(starsh_index + i, starsh_index + j,
+                                                   starsh_data, starsh_data);
+        A.global(i, j, value);
+      }
+    }
+    free(starsh_index);
   } break;
   case 'f': { // matrix from a file
     DenseMatrix<double> Aseq;
@@ -131,11 +154,18 @@ int run(int argc, char* argv[]) {
     exit(1);
   }
   hss_opts.set_from_command_line(argc, argv);
+  auto stop_init = std::chrono::system_clock::now();
+  double init_time = std::chrono::duration_cast<
+    std::chrono::milliseconds>(stop_init - start_init).count();
 
-  if (hss_opts.verbose()) A.print("A");
+  //if (hss_opts.verbose()) A.print("A");
   if (!mpi_rank()) cout << "# tol = " << hss_opts.rel_tol() << endl;
 
+  auto start_compress = std::chrono::system_clock::now();
   HSSMatrixMPI<double> H(A, hss_opts);
+  auto stop_compress = std::chrono::system_clock::now();
+  double compress_time = std::chrono::duration_cast<
+    std::chrono::milliseconds>(stop_compress - start_compress).count();
   if (H.is_compressed()) {
     if (!mpi_rank()) {
       cout << "# created H matrix of dimension "
@@ -158,116 +188,13 @@ int run(int argc, char* argv[]) {
   }
 
   MPI_Barrier(MPI_COMM_WORLD);
-  auto Hdense = H.dense();
-  MPI_Barrier(MPI_COMM_WORLD);
-  if (hss_opts.verbose()) Hdense.print("H");
 
-  MPI_Barrier(MPI_COMM_WORLD);
-
-  Hdense.scaled_add(-1., A);
-  auto HnormF = Hdense.normF();
-  auto AnormF = A.normF();
-  if (!mpi_rank())
-    cout << "# relative error = ||A-H*I||_F/||A||_F = "
-         << HnormF / AnormF << endl;
-  if (A.active() && HnormF / AnormF >
-      ERROR_TOLERANCE * max(hss_opts.rel_tol(),hss_opts.abs_tol())) {
-    if (!mpi_rank()) cout << "ERROR: compression error too big!!" << endl;
-    MPI_Abort(MPI_COMM_WORLD, 1);
-  }
-
-  {
-    if (!mpi_rank()) cout << "# matrix-free compression!!" << endl;
-    DistElemMultDuplicated<double> mat(A);
-    hss_opts.set_synchronized_compression(false);
-    HSSMatrixMPI<double> HMF(A.rows(), A.cols(), &grid, mat, mat, hss_opts);
-    auto HMFdense = HMF.dense();
-    HMFdense.scaled_add(-1., A);
-    auto HMFnormF = HMFdense.normF();
-    if (!mpi_rank())
-      cout << "# relative error = ||A-H*I||_F/||A||_F = "
-           << HMFnormF / AnormF << endl;
-  }
-
-  if (!H.leaf()) {
-    double beta = 0.;
-    HSSMatrixBase<double>* H0 = H.child(0);
-    if (auto H0mpi = dynamic_cast<HSSMatrixMPI<double>*>(H0)) {
-      DistributedMatrix<double>
-        B0(H0mpi->grid(), H0mpi->cols(), H0mpi->cols()),
-        C0check(H0mpi->grid(), H0mpi->rows(), B0.cols());
-      B0.random();
-      DistributedMatrix<double> A0
-        (H0mpi->grid(), H0mpi->rows(), H0mpi->cols());
-      copy(H0mpi->rows(), H0mpi->cols(), A, 0, 0, A0, 0, 0, grid.ctxt_all());
-      if (H0mpi->active()) {
-        auto C0 = H0mpi->apply(B0);
-        gemm(Trans::N, Trans::N, 1., A0, B0, beta, C0check);
-        C0.scaled_add(-1., C0check);
-        auto C0norm = C0.normF();
-        auto C0checknorm = C0check.normF();
-        if (!mpi_rank())
-          cout << "# relative error = ||H0*B0-A0*B0||_F/||A0*B0||_F = "
-               << C0norm / C0checknorm << endl;
-        apply_HSS(Trans::C, *H0mpi, B0, beta, C0);
-        gemm(Trans::C, Trans::N, 1., A0, B0, beta, C0check);
-        C0.scaled_add(-1., C0check);
-        C0norm = C0.normF();
-        C0checknorm = C0check.normF();
-        if (!mpi_rank())
-          cout << "# relative error = ||H0'*B0-A0'*B0||_F/||A0'*B0||_F = "
-               << C0norm / C0checknorm << endl;
-      }
-    }
-  }
-
-  MPI_Barrier(MPI_COMM_WORLD);
-  default_random_engine gen;
-  uniform_int_distribution<size_t> random_idx(0,m-1);
-  if (!mpi_rank()) cout << "# extracting individual elements, avg error = ";
-  double ex_err = 0;
-  int iex = 5;
-  for (int i=0; i<iex; i++) {
-    auto r = random_idx(gen);
-    auto c = random_idx(gen);
-    if (r > c) continue;
-    ex_err += abs(H.get(r, c) - A.all_global(r, c));
-  }
-  if (!mpi_rank()) cout << ex_err/iex << endl;
-  if (A.active() && ex_err / iex >
-      ERROR_TOLERANCE * max(hss_opts.rel_tol(),hss_opts.abs_tol())) {
-    if (!mpi_rank()) cout << "ERROR: extraction error too big!!" << endl;
-    MPI_Abort(MPI_COMM_WORLD, 1);
-  }
-
-  vector<size_t> I, J;
-  auto nI = 8; //random_idx(gen);
-  auto nJ = 8; //random_idx(gen);
-  for (int i=0; i<nI; i++) I.push_back(random_idx(gen));
-  for (int j=0; j<nJ; j++) J.push_back(random_idx(gen));
-  if (!mpi_rank() && hss_opts.verbose()) {
-    cout << "# extracting I=[";
-    for (auto i : I) { cout << i << " "; } cout << "];\n#            J=[";
-    for (auto j : J) { cout << j << " "; } cout << "];" << endl;
-  }
-  auto sub = H.extract(I, J, &grid);
-  auto sub_dense = A.extract(I, J);
-  // sub.print("sub");
-  // sub_dense.print("sub_dense");
-  sub.scaled_add(-1., sub_dense);
-  // sub.print("sub_error");
-  auto relsubnorm = sub.normF() / sub_dense.normF();
-  if (!mpi_rank())
-    cout << "# sub-matrix extraction error = " << relsubnorm << endl;
-  if (sub.active() && relsubnorm >
-      ERROR_TOLERANCE * max(hss_opts.rel_tol(),hss_opts.abs_tol())) {
-    if (!mpi_rank()) cout << "ERROR: extraction error too big!!" << endl;
-    MPI_Abort(MPI_COMM_WORLD, 1);
-  }
-
-  MPI_Barrier(MPI_COMM_WORLD);
   if (!mpi_rank()) cout << "# computing ULV factorization of HSS matrix .. ";
+  auto ulv_start = std::chrono::system_clock::now();
   H.factor();
+  auto ulv_stop =  std::chrono::system_clock::now();
+  auto ulv_time = std::chrono::duration_cast<
+    std::chrono::milliseconds>(ulv_stop - ulv_start).count();
   if (!mpi_rank()) cout << "Done!" << endl;
 
   if (!mpi_rank()) cout << "# solving linear system .." << endl;
@@ -281,13 +208,28 @@ int run(int argc, char* argv[]) {
   Bcheck.scaled_add(-1., B);
   auto Bchecknorm = Bcheck.normF();
   auto Bnorm = B.normF();
+  double solve_error = Bchecknorm / Bnorm;
   if (!mpi_rank())
-    cout << "# relative error = ||B-H*(H\\B)||_F/||B||_F = "
-         << Bchecknorm / Bnorm << endl;
-  if (B.active() && Bchecknorm / Bnorm > SOLVE_TOLERANCE) {
-    if (!mpi_rank())
-      cout << "ERROR: ULV solve relative error too big!!" << endl;
-    MPI_Abort(MPI_COMM_WORLD, 1);
+    cout << "# relative error = ||B - H * (H\\B) || _F/||B||_F = "
+         << solve_error << endl;
+  // if (B.active() && Bchecknorm / Bnorm > SOLVE_TOLERANCE) {
+  //   if (!mpi_rank())
+  //     cout << "ERROR: ULV solve relative error too big!!" << endl;
+  //   MPI_Abort(MPI_COMM_WORLD, 1);
+  // }
+
+  if (!mpi_rank()) {
+    std::cout << "RESULT: "
+              << compress_time << ","
+              << init_time << ","
+              << solve_error << ","
+              << ulv_time << ","
+              << Hrank << ","
+              << m << ","
+              << hss_opts.leaf_size() << ","
+              << hss_opts.abs_tol() << ","
+              << mpi_nprocs()
+              << std::endl;
   }
 
   if (!mpi_rank()) cout << "# test succeeded, exiting" << endl;
