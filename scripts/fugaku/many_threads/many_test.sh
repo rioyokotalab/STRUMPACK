@@ -1,6 +1,6 @@
 #!/bin/sh -x
 
-#PJM -L "node=8192"
+#PJM -L "node=4096"
 #PJM -L "rscunit=rscunit_ft01"
 #PJM -L "rscgrp=large"
 #PJM -L "elapse=24:00:00"
@@ -9,7 +9,7 @@
 #PJM -L "issue_state=0"
 #PJM -L "ex_pipe_state=0"
 #PJM -L "eco_state=0"
-#PJM --mpi "proc=32768"
+#PJM --mpi "proc=16384"
 #PJM --mpi "max-proc-per-node=4"
 #PJM -s
 
@@ -20,5 +20,5 @@ export OMP_BIND=close
 export OMP_NUM_THREADS=12
 export XOS_MMM_L_PAGING_POLICY="demand:demand:demand"
 
-mpiexec -stdout out_8192.log -stderr err_8192.log ./build/test/test_STRUMPACK_starsh 1048576 1e-11 --hss_rel_tol 1e-9
-mpiexec -stdout out_8192.log -stderr err_8192.log ./build/test/test_STRUMPACK_starsh 1048576 1e-9 --hss_rel_tol 1e-9
+mpiexec -stdout out_many_12_4096.log -stderr err_many_12_4096.log ./build/test/test_STRUMPACK_starsh 524288 1e-11 --hss_rel_tol 1e-9
+mpiexec -stdout out_many_12_4096.log -stderr err_many_12_4096.log ./build/test/test_STRUMPACK_starsh 524288 1e-9 --hss_rel_tol 1e-9
