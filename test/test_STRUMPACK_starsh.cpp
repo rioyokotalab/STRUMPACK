@@ -60,7 +60,7 @@ int run(int argc, char* argv[]) {
   // char * md_file_name = argv[1];
   // fprintf(stderr, "using file %s for data.\n", md_file_name);
 
-  int64_t ndim = 3;
+  int64_t ndim = 2;
   STARSH_int N = std::atol(argv[1]);
   double add_diag = std::atof(argv[2]);
   starsh_data = (STARSH_laplace*)malloc(sizeof(STARSH_laplace));
@@ -94,7 +94,7 @@ int run(int argc, char* argv[]) {
     };
 
   if (!mpi_rank()) {
-    std::cout << "start HSS construction\n";
+    std::cout << "start HSS construction NDIM=" << ndim << std::endl;
   }
 
   auto begin_construct = std::chrono::system_clock::now();
