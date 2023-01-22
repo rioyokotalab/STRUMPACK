@@ -10,15 +10,15 @@
 #PJM -L "ex_pipe_state=0"
 #PJM -L "eco_state=0"
 #PJM --mpi "proc=1024"
-#PJM --mpi "max-proc-per-node=1"
+#PJM --mpi "max-proc-per-node=4"
 #PJM -s
 
 export OMP_PLACES=cores
 export OMP_DISPLAY_AFFINITY=TRUE
 export OMP_PROC_BIND=close
 export OMP_BIND=close
-export OMP_NUM_THREADS=48
+export OMP_NUM_THREADS=12
 export XOS_MMM_L_PAGING_POLICY="demand:demand:demand"
 
-mpiexec -stdout out_single_1024.log -stderr err_single_1024.log ./build/test/test_STRUMPACK_starsh 524288 1e-11 --hss_rel_tol 1e-9
-mpiexec -stdout out_single_1024.log -stderr err_single_1024.log ./build/test/test_STRUMPACK_starsh 524288 1e-9 --hss_rel_tol 1e-9
+#mpiexec -stdout out_single_64.log -stderr err_single_64.log ./build/test/test_STRUMPACK_starsh 65536 1e-11 --hss_rel_tol 1e-9
+mpiexec -stdout out_single_1024.log -stderr err_single_1024.log ./build/test/test_STRUMPACK_starsh 1048576 1e-9 --hss_rel_tol 1e-8
