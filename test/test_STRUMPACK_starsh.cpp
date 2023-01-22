@@ -3,6 +3,8 @@
 #include <chrono>
 using namespace std;
 
+#include "VT.h"
+
 #include "dense/DistributedMatrix.hpp"
 #include "HSS/HSSMatrixMPI.hpp"
 
@@ -36,6 +38,8 @@ int run(int argc, char* argv[]) {
   MPIComm c;
   HSSOptions<double> hss_opts;
   hss_opts.set_verbose(false);
+
+  VT_traceoff();
 
   enum STARSH_PARTICLES_PLACEMENT place = STARSH_PARTICLES_UNIFORM;
 
@@ -131,10 +135,15 @@ int run(int argc, char* argv[]) {
     std::cout << "start HSS factor.\n";
   }
 
+  VT_traceon();
+
   auto begin_factor = std::chrono::system_clock::now();
   HSS_matrix.get()->factor();
   // HSS_matrix.factor();
   auto end_factor = std::chrono::system_clock::now();
+
+  VT_traceoff();
+
 
   auto HSS_rank_post_factorization = HSS_matrix.get()->rank();
   // auto HSS_rank_post_factorization = HSS_matrix.max_rank();
