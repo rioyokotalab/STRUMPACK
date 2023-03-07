@@ -170,6 +170,7 @@ int run(int argc, char* argv[]) {
               << " --solve_time " << solve_time
               << " --pre_factor_rank " << HSS_rank_pre_factorization
               << " --post_factor_rank " << HSS_rank_post_factorization
+	      << " --ndim " << ndim
               << ""
               << std::endl;
   }
