@@ -62,14 +62,18 @@ int run(int argc, char* argv[]) {
 
   int64_t ndim = 2;
   STARSH_int N = std::atol(argv[1]);
-  double add_diag = std::atof(argv[2]);
-  starsh_data = (STARSH_laplace*)malloc(sizeof(STARSH_laplace));
+  double sigma = std::atof(argv[2]);
+  double nu = std::atof(argv[3]);
+  double smoothness = std::atof(argv[4]);
+  starsh_data = (STARSH_matern*)malloc(sizeof(STARSH_matern));
 
   starsh_data->N = N;
-  starsh_data->PV = add_diag;
+  starsh_data->sigma = sigma;
+  starsh_data->nu = nu;
+  starsh_data->smoothness = smoothness;
   starsh_data->ndim = ndim;
 //`  s_kernel = starsh_laplace_point_kernel;
-  starsh_laplace_grid_generate(&starsh_data, N, ndim, add_diag, place);
+  starsh_matern_grid_generate(&starsh_data, N, ndim, sigma, nu, smoothness, place);
   // starsh_file_grid_read_kmeans(md_file_name,
   //                              &(starsh_data->particles),
   //                              N, ndim);
@@ -89,7 +93,7 @@ int run(int argc, char* argv[]) {
 
   auto starsh_matrix =
     [](int i, int j) {
-      return starsh_laplace_point_kernel(starsh_index + i, starsh_index + j,
+      return starsh_matern_point_kernel(starsh_index + i, starsh_index + j,
                       starsh_data, starsh_data);
     };
 
