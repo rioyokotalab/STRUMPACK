@@ -27,7 +27,7 @@ using namespace strumpack::HSS;
 
 int ndim;
 STARSH_kernel *s_kernel;
-STARSH_laplace *starsh_data;
+STARSH_matern *starsh_data;
 STARSH_int * starsh_index;
 
 int run(int argc, char* argv[]) {
@@ -167,7 +167,7 @@ int run(int argc, char* argv[]) {
   if (!mpi_rank()) {
     std::cout << "RESULT: np-- " << mpi_nprocs()
               << " --N " << N
-              << " --add_diag " << add_diag
+              << " --params " << sigma << "," << nu << "," << smoothness
               << " --solve_error " << solve_error
               << " --construct_time " << construct_time
               << " --factor_time " << factor_time
