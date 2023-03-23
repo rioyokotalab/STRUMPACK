@@ -26,10 +26,11 @@
  *             Division).
  *
  */
-
-
 #include <hip/hip_runtime.h>
 #include "HIPWrapper.hpp"
+#if defined(STRUMPACK_USE_MAGMA)
+#include "MAGMAWrapper.hpp"
+#endif
 #if defined(STRUMPACK_USE_MPI)
 #include "misc/MPIWrapper.hpp"
 #endif
@@ -104,12 +105,7 @@ namespace strumpack {
       gpu::BLASHandle hb;
       gpu::SOLVERHandle hs;
 #if defined(STRUMPACK_USE_MAGMA)
-      magma_init();
-      magma_queue_t magma_q;
-      magma_queue_create(0, &magma_q);
-      magma_iset_pointer(nullptr, nullptr, 1, 0, 0, 0, 0, magma_q);
-      magma_queue_destroy(magma_q);
-      magma_finalize();
+      gpu::magma::MAGMAQueue mq;
 #endif
     }
 

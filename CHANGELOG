@@ -1,3 +1,22 @@
+Version 7.0.1 Released Oct 2022
+===============================
+- Require C++14 instead of 17
+
+Version 7.0.0 Released Oct 2022
+===============================
+- Many bugfixes and general improvements.
+- Important fixes in the GPU code, and in the usage of SLATE
+  (GPU capable ScaLAPACK replacement).
+- The default ordering now uses METIS_NodeND, instead of the
+  (undocumented) METIS_NodeNDP routine. This can impact performance,
+  or for some problems lead to stack overflow, but for others it
+  drastically reduces memory usage. The old behavior can be restored
+  with --sp_enable_METIS_NodeNDP.
+- Improvements to error handling, mostly related to zero pivots.
+- Added new ordering options: AND, MMD, AMD
+- Require C++-17
+
+
 Version 6.3.1 Released March 2022
 =================================
 - Fix for setting CUDA/HIP device when there are multiple,

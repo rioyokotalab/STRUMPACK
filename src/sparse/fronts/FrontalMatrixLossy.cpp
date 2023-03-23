@@ -28,7 +28,11 @@
  */
 #include "FrontalMatrixLossy.hpp"
 #include "zfp.h"
+#if ZFP_VERSION >= 0x1000
+#include "zfp/array2.hpp"
+#else
 #include "zfparray2.h"
+#endif
 
 namespace strumpack {
 
@@ -77,7 +81,6 @@ namespace strumpack {
     zfp_field_free(f);
     zfp_stream_close(destream);
     stream_close(bstream);
-    return;
   }
 
   template<typename T> LossyMatrix<std::complex<T>>::LossyMatrix
