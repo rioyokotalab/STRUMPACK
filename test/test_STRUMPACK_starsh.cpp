@@ -3,6 +3,8 @@
 #include <chrono>
 using namespace std;
 
+#include "VT.h"
+
 #include "dense/DistributedMatrix.hpp"
 #include "HSS/HSSMatrixMPI.hpp"
 
@@ -37,6 +39,8 @@ int run(int argc, char* argv[]) {
   HSSOptions<double> hss_opts;
   hss_opts.set_verbose(false);
 
+  VT_traceoff();
+
   enum STARSH_PARTICLES_PLACEMENT place = STARSH_PARTICLES_UNIFORM;
 
   auto usage = [&]() {
@@ -60,7 +64,7 @@ int run(int argc, char* argv[]) {
   // char * md_file_name = argv[1];
   // fprintf(stderr, "using file %s for data.\n", md_file_name);
 
-  int64_t ndim = 3;
+  int64_t ndim = 2;
   STARSH_int N = std::atol(argv[1]);
   double add_diag = std::atof(argv[2]);
   starsh_data = (STARSH_laplace*)malloc(sizeof(STARSH_laplace));
@@ -94,7 +98,7 @@ int run(int argc, char* argv[]) {
     };
 
   if (!mpi_rank()) {
-    std::cout << "start HSS construction\n";
+    std::cout << "start HSS construction NDIM=" << ndim << std::endl;
   }
 
   auto begin_construct = std::chrono::system_clock::now();
@@ -131,10 +135,15 @@ int run(int argc, char* argv[]) {
     std::cout << "start HSS factor.\n";
   }
 
+  VT_traceon();
+
   auto begin_factor = std::chrono::system_clock::now();
   HSS_matrix.get()->factor();
   // HSS_matrix.factor();
   auto end_factor = std::chrono::system_clock::now();
+
+  VT_traceoff();
+
 
   auto HSS_rank_post_factorization = HSS_matrix.get()->rank();
   // auto HSS_rank_post_factorization = HSS_matrix.max_rank();
