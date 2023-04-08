@@ -27,8 +27,25 @@ using namespace strumpack::HSS;
 
 int ndim;
 STARSH_kernel *s_kernel;
-STARSH_matern *starsh_data;
+STARSH_matern *starsh_matern;
+STARSH_laplace *starsh_laplace;
+STARSH_yukawa *starsh_yukawa;
 STARSH_int * starsh_index;
+
+double matern_kernel(int i, int j) {
+  return starsh_matern_point_kernel(starsh_index + i, starsh_index + j,
+                                    starsh_matern, starsh_matern);
+}
+
+double laplace_kernel(int i, int j) {
+  return starsh_laplace_point_kernel(starsh_index + i, starsh_index + j,
+                                     starsh_laplace, starsh_laplace);
+}
+
+double yukawa_kernel(int i, int j) {
+  return starsh_yukawa_point_kernel(starsh_index + i, starsh_index + j,
+                                    starsh_yukawa, starsh_yukawa);
+}
 
 int run(int argc, char* argv[]) {
   int n = 1;
@@ -36,6 +53,8 @@ int run(int argc, char* argv[]) {
   MPIComm c;
   HSSOptions<double> hss_opts;
   hss_opts.set_verbose(false);
+
+  strumpack::structured::extract_t<double> kernel_function;
 
   enum STARSH_PARTICLES_PLACEMENT place = STARSH_PARTICLES_UNIFORM;
 
@@ -57,26 +76,44 @@ int run(int argc, char* argv[]) {
 
   BLACSGrid grid(MPI_COMM_WORLD);
 
-  // char * md_file_name = argv[1];
-  // fprintf(stderr, "using file %s for data.\n", md_file_name);
-
   int64_t ndim = 2;
   STARSH_int N = std::atol(argv[1]);
-  double sigma = std::atof(argv[2]);
-  double nu = std::atof(argv[3]);
-  double smoothness = std::atof(argv[4]);
-  starsh_data = (STARSH_matern*)malloc(sizeof(STARSH_matern));
+  double param_1 = std::atof(argv[2]);
+  double param_2 = std::atof(argv[3]);
+  double param_3 = std::atof(argv[4]);
+  int kernel_choice = std::atoi(argv[5]);
 
-  starsh_data->N = N;
-  starsh_data->sigma = sigma;
-  starsh_data->nu = nu;
-  starsh_data->smoothness = smoothness;
-  starsh_data->ndim = ndim;
-//`  s_kernel = starsh_laplace_point_kernel;
-  starsh_matern_grid_generate(&starsh_data, N, ndim, sigma, nu, smoothness, place);
-  // starsh_file_grid_read_kmeans(md_file_name,
-  //                              &(starsh_data->particles),
-  //                              N, ndim);
+
+  switch(kernel_choice) {
+  case 0:                       // laplace
+    starsh_laplace = (STARSH_laplace*)malloc(sizeof(STARSH_laplace));
+    starsh_laplace->N = N;
+    starsh_laplace->ndim = ndim;
+    starsh_laplace->PV = param_1;
+    starsh_laplace_grid_generate(&starsh_laplace, N, ndim, param_1, place);
+    kernel_function = laplace_kernel;
+    break;
+  case 1:                       // matern
+    starsh_matern = (STARSH_matern*)malloc(sizeof(STARSH_matern));
+    starsh_matern->N = N;
+    starsh_matern->ndim = ndim;
+    starsh_matern->sigma = param_1;
+    starsh_matern->nu = param_2;
+    starsh_matern->smoothness = param_3;
+    starsh_matern_grid_generate(&starsh_matern, N, ndim, param_1, param_2, param_3, place);
+    kernel_function = matern_kernel;
+    break;
+  case 2:                       // yukawa
+    starsh_yukawa = (STARSH_yukawa*)malloc(sizeof(STARSH_yukawa));
+    starsh_yukawa->N = N;
+    starsh_yukawa->ndim = ndim;
+    starsh_yukawa->alpha = param_1;
+    starsh_yukawa->singularity = param_2;
+    starsh_yukawa_grid_generate(&starsh_yukawa, N, ndim, param_1, param_2, place);
+    kernel_function = yukawa_kernel;
+    break;
+  }
+
 
   starsh_index = (STARSH_int*)malloc( N * sizeof(STARSH_int) );
   for(STARSH_int i = 0; i < N; ++i) {
@@ -90,13 +127,6 @@ int run(int argc, char* argv[]) {
   options.set_from_command_line(argc, argv);
   options.set_type(structured::Type::HSS);
 
-
-  auto starsh_matrix =
-    [](int i, int j) {
-      return starsh_matern_point_kernel(starsh_index + i, starsh_index + j,
-                      starsh_data, starsh_data);
-    };
-
   if (!mpi_rank()) {
     std::cout << "start HSS construction NDIM=" << ndim << std::endl;
   }
@@ -107,29 +137,17 @@ int run(int argc, char* argv[]) {
     &grid,
     N,
     N,
-    starsh_matrix,
+    kernel_function,
     options
   );
-  // auto A = DistributedMatrix<double>(&grid, N, N);
-  // for (STARSH_int i = 0; i < N; ++i) {
-  //   for (STARSH_int j = 0; j < N; ++j) {
-  //     double value = starsh_yukawa_point_kernel(starsh_index + i, starsh_index + j,
-  //                                               starsh_data, starsh_data);
-  //     A.global(i, j, value);
-  //   }
-  // }
-  // HSSMatrixMPI<double> HSS_matrix(A, options);
   free(starsh_index);
   auto end_construct = std::chrono::system_clock::now();
 
   auto HSS_rank_pre_factorization = HSS_matrix.get()->rank();
-  // auto HSS_rank_pre_factorization = HSS_matrix.max_rank();
 
   DistributedMatrix<double> B(&grid, N, 1), X(&grid, N, 1);
   X.random();
-  // B = HSS * X
   HSS_matrix.get()->mult(Trans::N, X, B);
-  // HSS_matrix.mult(Trans::N, X, B);
 
   if (!mpi_rank()) {
     std::cout << "start HSS factor.\n";
@@ -137,11 +155,9 @@ int run(int argc, char* argv[]) {
 
   auto begin_factor = std::chrono::system_clock::now();
   HSS_matrix.get()->factor();
-  // HSS_matrix.factor();
   auto end_factor = std::chrono::system_clock::now();
 
   auto HSS_rank_post_factorization = HSS_matrix.get()->rank();
-  // auto HSS_rank_post_factorization = HSS_matrix.max_rank();
 
   if (!mpi_rank()) {
     std::cout << "start HSS solve.\n";
@@ -149,7 +165,6 @@ int run(int argc, char* argv[]) {
 
   auto begin_solve = std::chrono::system_clock::now();
   HSS_matrix.get()->solve(B);
-  // HSS_matrix.solve(B);
   auto end_solve = std::chrono::system_clock::now();
 
 
@@ -167,7 +182,7 @@ int run(int argc, char* argv[]) {
   if (!mpi_rank()) {
     std::cout << "RESULT: np-- " << mpi_nprocs()
               << " --N " << N
-              << " --params " << sigma << "," << nu << "," << smoothness
+              << " --params " << param_1 << "," << param_2 << "," << param_3
               << " --solve_error " << solve_error
               << " --construct_time " << construct_time
               << " --factor_time " << factor_time
