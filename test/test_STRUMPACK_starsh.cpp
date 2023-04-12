@@ -82,7 +82,8 @@ int run(int argc, char* argv[]) {
   double param_2 = std::atof(argv[3]);
   double param_3 = std::atof(argv[4]);
   int kernel_choice = std::atoi(argv[5]);
-
+  double abs_tol = std::atof(argv[6]);
+  int leaf_size = std::atoi(argv[7]);
 
   switch(kernel_choice) {
   case 0:                       // laplace
@@ -126,6 +127,8 @@ int run(int argc, char* argv[]) {
   options.set_verbose(false);
   options.set_from_command_line(argc, argv);
   options.set_type(structured::Type::HSS);
+  options.set_abs_tol(abs_tol);
+  options.set_leaf_size(leaf_size);
 
   if (!mpi_rank()) {
     std::cout << "start HSS construction NDIM=" << ndim << std::endl;
