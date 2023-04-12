@@ -74,6 +74,7 @@ endif()
 if(NOT (STRUMPACK_USE_CUDA OR STRUMPACK_USE_HIP))
   if(TPL_ENABLE_MAGMA)
     message(STATUS "Disabling MAGMA, it requires CUDA or HIP to be enabled.")
+    set(TPL_ENABLE_MAGMA OFF)
   endif()
 endif()
 
@@ -602,7 +603,9 @@ if(OpenMP_FOUND)
   # if(OpenMP_Fortran_FOUND)
   #   target_link_libraries(strumpack PRIVATE OpenMP::OpenMP_Fortran)
   # endif()
-else()
+endif()
+
+if(NOT STRUMPACK_USE_OPENMP)
   include(CheckCXXCompilerFlag)
   check_cxx_compiler_flag(-Wno-unknown-pragmas
     COMPILER_SUPPORTS_NOPRAGMA_WARNING)
