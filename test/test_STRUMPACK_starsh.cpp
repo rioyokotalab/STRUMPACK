@@ -167,7 +167,6 @@ int run(int argc, char* argv[]) {
   HSS_matrix.get()->solve(B);
   auto end_solve = std::chrono::system_clock::now();
 
-
   double construct_time = std::chrono::duration_cast<
     std::chrono::milliseconds>(end_construct - begin_construct).count();
   double factor_time = std::chrono::duration_cast<
@@ -190,6 +189,8 @@ int run(int argc, char* argv[]) {
               << " --pre_factor_rank " << HSS_rank_pre_factorization
               << " --post_factor_rank " << HSS_rank_post_factorization
 	      << " --ndim " << ndim
+	      << " --threads " << omp_get_max_threads()
+	      << " --kernel_choice " << kernel_choice
               << ""
               << std::endl;
   }
