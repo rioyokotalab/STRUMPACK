@@ -191,6 +191,8 @@ int run(int argc, char* argv[]) {
 	      << " --ndim " << ndim
 	      << " --threads " << omp_get_max_threads()
 	      << " --kernel_choice " << kernel_choice
+	      << " --leaf_size " << options.leaf_size()
+	      << " --abs_tol " << options.abs_tol()
               << ""
               << std::endl;
   }
