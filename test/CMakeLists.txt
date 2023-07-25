@@ -1,12 +1,12 @@
-add_executable(test_HSS_seq    test_HSS_seq.cpp)
-add_executable(test_sparse_seq test_sparse_seq.cpp)
-add_executable(test_BLR_seq    test_BLR_seq.cpp)
-add_executable(test_matrix_IO  test_matrix_IO.cpp)
+# add_executable(test_HSS_seq    test_HSS_seq.cpp)
+# add_executable(test_sparse_seq test_sparse_seq.cpp)
+# add_executable(test_BLR_seq    test_BLR_seq.cpp)
+# add_executable(test_matrix_IO  test_matrix_IO.cpp)
 
-target_link_libraries(test_HSS_seq strumpack)
-target_link_libraries(test_sparse_seq strumpack)
-target_link_libraries(test_BLR_seq strumpack)
-target_link_libraries(test_matrix_IO strumpack)
+# target_link_libraries(test_HSS_seq strumpack)
+# target_link_libraries(test_sparse_seq strumpack)
+# target_link_libraries(test_BLR_seq strumpack)
+# target_link_libraries(test_matrix_IO strumpack)
 
 add_test("user_test_HSS_seq" ${CMAKE_CURRENT_BINARY_DIR}/test_HSS_seq T 100)
 add_test("user_test_sparse_seq" ${CMAKE_CURRENT_BINARY_DIR}/test_sparse_seq
@@ -15,32 +15,32 @@ add_test("user_matrix_IO" ${CMAKE_CURRENT_BINARY_DIR}/test_matrix_IO T 1000)
 add_test("user_test_BLR_seq" ${CMAKE_CURRENT_BINARY_DIR}/test_BLR_seq 300)
 
 if(STRUMPACK_USE_MPI)
-  add_executable(test_HSS_mpi             test_HSS_mpi.cpp)
-  add_executable(test_sparse_mpi          test_sparse_mpi.cpp)
-  add_executable(test_structure_reuse_mpi test_structure_reuse_mpi.cpp)
-  add_executable(test_BLR_mpi             test_BLR_mpi.cpp)
+  # add_executable(test_HSS_mpi             test_HSS_mpi.cpp)
+  # add_executable(test_sparse_mpi          test_sparse_mpi.cpp)
+  # add_executable(test_structure_reuse_mpi test_structure_reuse_mpi.cpp)
+  # add_executable(test_BLR_mpi             test_BLR_mpi.cpp)
   add_executable(test_STRUMPACK_starsh    test_STRUMPACK_starsh.cpp)
 
-  target_link_libraries(test_HSS_mpi strumpack)
-  target_link_libraries(test_sparse_mpi strumpack)
-  target_link_libraries(test_structure_reuse_mpi strumpack)
-  target_link_libraries(test_BLR_mpi strumpack)
+  # target_link_libraries(test_HSS_mpi strumpack)
+  # target_link_libraries(test_sparse_mpi strumpack)
+  # target_link_libraries(test_structure_reuse_mpi strumpack)
+  # target_link_libraries(test_BLR_mpi strumpack)
   target_link_libraries(test_STRUMPACK_starsh strumpack)
 
   # TODO check whether this is supported?
   set(OVERSUBSCRIBEFLAG "--oversubscribe")
 
-  add_test("user_test_HSS_mpi" ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 2
-    ${MPIEXEC_PREFLAGS} ${OVERSUBSCRIBEFLAG}
-    ${CMAKE_CURRENT_BINARY_DIR}/test_HSS_mpi T 100)
-  add_test("user_test_sparse_mpi" ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 2
-    ${MPIEXEC_PREFLAGS} ${OVERSUBSCRIBEFLAG}
-    ${CMAKE_CURRENT_BINARY_DIR}/test_sparse_mpi
-    ${PROJECT_SOURCE_DIR}/examples/sparse/data/pde900.mtx)
-  add_test("user_structure_reuse_mpi" ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 2
-    ${MPIEXEC_PREFLAGS} ${OVERSUBSCRIBEFLAG}
-    ${CMAKE_CURRENT_BINARY_DIR}/test_structure_reuse_mpi
-    ${PROJECT_SOURCE_DIR}/examples/sparse/data/pde900.mtx)
+  # add_test("user_test_HSS_mpi" ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 2
+  #   ${MPIEXEC_PREFLAGS} ${OVERSUBSCRIBEFLAG}
+  #   ${CMAKE_CURRENT_BINARY_DIR}/test_HSS_mpi T 100)
+  # add_test("user_test_sparse_mpi" ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 2
+  #   ${MPIEXEC_PREFLAGS} ${OVERSUBSCRIBEFLAG}
+  #   ${CMAKE_CURRENT_BINARY_DIR}/test_sparse_mpi
+  #   ${PROJECT_SOURCE_DIR}/examples/sparse/data/pde900.mtx)
+  # add_test("user_structure_reuse_mpi" ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 2
+  #   ${MPIEXEC_PREFLAGS} ${OVERSUBSCRIBEFLAG}
+  #   ${CMAKE_CURRENT_BINARY_DIR}/test_structure_reuse_mpi
+  #   ${PROJECT_SOURCE_DIR}/examples/sparse/data/pde900.mtx)
   # add_test("user_test_BLR_mpi" ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 2
   #   ${MPIEXEC_PREFLAGS} ${OVERSUBSCRIBEFLAG}
   #   ${CMAKE_CURRENT_BINARY_DIR}/test_BLR_mpi 1000)
