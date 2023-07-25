@@ -19,6 +19,9 @@ extern "C" {
 #include "structured/StructuredMatrix.hpp"
 #include "iterative/IterativeSolversMPI.hpp"
 
+//#include "mpiP-API.h"
+//#include "mpiPconfig.h"
+
 using namespace strumpack;
 using namespace strumpack::HSS;
 
@@ -84,6 +87,7 @@ int run(int argc, char* argv[]) {
   int kernel_choice = std::atoi(argv[5]);
   double abs_tol = std::atof(argv[6]);
   int leaf_size = std::atoi(argv[7]);
+  int max_rank = std::atoi(argv[8]);
 
   switch(kernel_choice) {
   case 0:                       // laplace
@@ -129,6 +133,7 @@ int run(int argc, char* argv[]) {
   options.set_type(structured::Type::HSS);
   options.set_abs_tol(abs_tol);
   options.set_leaf_size(leaf_size);
+  options.set_max_rank(max_rank);
 
   if (!mpi_rank()) {
     std::cout << "start HSS construction NDIM=" << ndim << std::endl;
@@ -156,9 +161,11 @@ int run(int argc, char* argv[]) {
     std::cout << "start HSS factor.\n";
   }
 
+  //  MPI_Pcontrol(1);
   auto begin_factor = std::chrono::system_clock::now();
   HSS_matrix.get()->factor();
   auto end_factor = std::chrono::system_clock::now();
+//  MPI_Pcontrol(0);
 
   auto HSS_rank_post_factorization = HSS_matrix.get()->rank();
 
@@ -196,6 +203,7 @@ int run(int argc, char* argv[]) {
 	      << " --kernel_choice " << kernel_choice
 	      << " --leaf_size " << options.leaf_size()
 	      << " --abs_tol " << options.abs_tol()
+	      << " --max_rank " << options.max_rank()
               << ""
               << std::endl;
   }
